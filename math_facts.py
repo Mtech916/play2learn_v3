@@ -23,7 +23,7 @@ def choose_operation():
 def choose_max_number():
     """player chooses max number"""
     max_number = None
-    max_num_range = range(1, 100)
+    max_num_range = range(1, 101)
     while max_number not in max_num_range:
         max_number = int(input("Please enter a max number between 1 and 100: "))
         if max_number not in max_num_range:
@@ -41,9 +41,6 @@ def start_timer():
     while game_time > 0 and not game_over.is_set():
         time.sleep(1)
         game_time -= 1
-    # if game_time == 0:
-    #     print("\nTime's up!")
-    #     end_game()
 
 
 def generate_problem(operation, max_number):
@@ -54,7 +51,7 @@ def generate_problem(operation, max_number):
     if operation == "/":
         while rand_num1 % rand_num2 != 0:
             rand_num1 = random.randint(1, max_number)
-            # rand_num2 = random.randint(1, max_number)
+            rand_num2 = random.randint(1, max_number)
 
     math_problem = f"{rand_num1} {operation} {rand_num2} = ?"
 
@@ -102,7 +99,6 @@ def reset_game():
         game_time = 30
         score = 0
         game_over = threading.Event()
-        # game_over.clear()
 
     time.sleep(1)
     main()
@@ -130,7 +126,6 @@ def main():
             print("-" * 50)
         else:
             if game_time == 0:
-                # game_over.set()
                 end_game()
             else:
                 print(f"{user_answer} is not correct. Please try again.")
