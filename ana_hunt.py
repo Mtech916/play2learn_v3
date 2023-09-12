@@ -14,6 +14,7 @@ class Game:
         self.timer = threading.Thread(target=self.start_timer)
         self.score = 0
         self.game_over = threading.Event()
+        self.word_length = None
 
     def start_timer(self):
         """Start the timer."""
@@ -21,36 +22,47 @@ class Game:
             time.sleep(1)
             self.game_time -= 1
 
-    def end_game(self, word_length, you_won=False):
+    def end_game(self, you_won):
         """End the game."""
 
-        if not you_won:
+        won = you_won
+
+        # if self.timer and self.timer.is_alive():
+        #     self.game_over.set()
+
+        if not won:
             print("\nTime's Up!")
             print(f"\nYour score is {self.score}.")
+            print("-" * 50)
         else:
+            print("\nYou Won!")
             print(f"\nYour score is {self.score}.")
-            print(f"\nYou got all the anagrams for {word_length} letter words!")
+            print(f"\nYou got all the anagrams for {self.word_length} letter words!")
             print("-" * 50)
 
-        play_again = input(f"Press enter to play again or 'q' to quit: ")
+        self.game_over.set()
+        # play_again = input(f"Press enter to play again or 'q' to quit: ")
 
-        if not play_again:
-            self.game_over.set()
-            self.reset_game(self.game_time)
-        elif play_again.upper() == "Q":
-            self.game_over.set()
-            return False
-        else:
-            self.game_over.set()
-            return False
+        # if not play_again:
+        #     # self.game_over.set()
+        #     self.reset_game(self.game_time)
+        #     return play_again
+        # elif play_again.upper() == "Q":
+        #     # self.game_over.set()
+        #     return play_again
+        # else:
+        #     # self.game_over.set()
+        #     return play_again
 
-    def reset_game(self, game_time):
-        """Reset the game."""
-        self.game_time = game_time
-        self.score = 0
-        self.game_over = threading.Event()
-        time.sleep(1)
-        self.run()
+    # def reset_game(self, game_time):
+    #     """Reset the game."""
+    #     self.game_time = game_time
+    #     self.score = 0
+    #     self.game_over.clear()
+    #     time.sleep(1)
+    #     self.game_over = threading.Event()
+    #     time.sleep(1)
+    #     self.run()
 
     def run(self):
         """Create a run method."""
@@ -62,21 +74,21 @@ class AnagramGame(Game):
 
     def users_choice(self):
         """Ask the user to choose a word length between 5 and 8."""
-        word_length = None
+        # word_length = None
         acceptable_range = range(3, 9)
-        while word_length not in acceptable_range:
-            word_length = int(
+        while self.word_length not in acceptable_range:
+            self.word_length = int(
                 input(f"Please Choose a word length {list(acceptable_range)}: ")
             )
-            if word_length not in acceptable_range:
-                print("Wrong Choice -> word_length = ", word_length)
+            if self.word_length not in acceptable_range:
+                print("Wrong Choice -> word_length = ", self.word_length)
                 print("That is not a correct word length.")
-                word_length = int(
+                self.word_length = int(
                     input(
                         f"-Please Try Again- Choose a word length {list(acceptable_range)}: "
                     )
                 )
-        return word_length
+        return self.word_length
 
     def file_path(self, relative_path):
         start_dir = Path(__file__).parent
@@ -96,11 +108,11 @@ class AnagramGame(Game):
             }
             return words
 
-    def create_words_to_play(self, words, word_length):
+    def create_words_to_play(self, words):
         """Create a list of words to play with from the words dictionary."""
 
         words_to_guess = []
-        key = str(word_length)
+        key = str(self.word_length)
         words_to_guess = words.pop(key)
 
         return words_to_guess
@@ -127,15 +139,15 @@ class AnagramGame(Game):
         user_guess = None
         user_guesses = []
 
-        word_length = self.users_choice()
+        num_of_char = self.users_choice()
 
-        if word_length:
+        if num_of_char:
             timer_thread = threading.Thread(target=self.start_timer)
             timer_thread.start()
 
         words = self.get_words()
 
-        words_to_guess = self.create_words_to_play(words, word_length)
+        words_to_guess = self.create_words_to_play(words)
 
         # game_play_words are words that might be used in the game
         # current_words are words that are being used in the game
@@ -165,7 +177,8 @@ class AnagramGame(Game):
                 user_guesses.append(user_guess)
                 if self.game_time == 0:
                     print(f"\nSorry, you didn't get that answer in on time.")
-                    self.end_game(word_length, you_won=False)
+                    you_won = False
+                    self.end_game(you_won)
                 else:
                     print(message)
             else:
@@ -175,11 +188,12 @@ class AnagramGame(Game):
                 num_of_words = len(current_words)
                 if self.game_time == 0:
                     print(f"\nSorry, you didn't get that answer in on time.")
-                    self.end_game(word_length, you_won=False)
+                    you_won = False
+                    self.end_game(you_won)
                 else:
                     print(f"{user_guess} is correct!")
 
-            if num_of_words == 0:
+            if num_of_words == 0 and self.game_time > 0:
                 guessed_all = True
                 print(f"You got all the anagrams for {display_word}!")
                 print("-" * 50)
@@ -199,17 +213,20 @@ class AnagramGame(Game):
 
             if not game_play_words and not num_of_words:
                 guessed_all = True
-                wl = word_length
                 you_won = True
-                self.end_game(you_won, wl)
+                self.end_game(you_won)
+
+        # print(f'From run() - play_pass = "{play_pass}"')
+        # return play_pass
 
 
 if __name__ == "__main__":
     while True:
         anagram_game = AnagramGame(60)
         anagram_game.run()
-        play_again = anagram_game.end_game(
-            you_won=True, word_length=anagram_game.users_choice()
-        )
-        if not play_again:
+
+        play_again = input(f"Press enter to play again or 'q' to quit: ")
+        if not play_again or play_again.upper() != "Q":
+            continue
+        elif play_again.upper() == "Q":
             break
