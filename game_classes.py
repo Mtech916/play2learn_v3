@@ -113,17 +113,24 @@ class MathFactsGame(Game):
             display_problem, rand_num1, rand_num2 = self.generate_problem(
                 operation, max_number
             )
-            print(f"{display_problem}")
-            print(f"You have {self.game_time} seconds left.")
-            user_answer = int(input("Enter an answer: "))
-            checked = self.check_answer(operation, rand_num1, rand_num2, user_answer)
 
-            if checked and self.game_time > 0:
-                self.score += 1
-                print(f"{user_answer} is correct!")
-                print("-" * 50)
-            else:
-                if self.game_time == 0:
+            last_guess_correct = False
+
+            while not last_guess_correct:
+                print(f"{display_problem}")
+                print(f"You have {self.game_time} seconds left.")
+                user_answer = int(input("Enter an answer: "))
+                checked = self.check_answer(
+                    operation, rand_num1, rand_num2, user_answer
+                )
+
+                if checked and self.game_time > 0:
+                    last_guess_correct = True
+                    self.score += 1
+                    print(f"{user_answer} is correct!")
+                    print("-" * 50)
+                elif self.game_time == 0:
+                    last_guess_correct = True
                     you_won = False
                     self.end_game(you_won)
                 else:
