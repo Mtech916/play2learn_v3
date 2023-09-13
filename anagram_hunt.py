@@ -9,22 +9,29 @@ class AnagramGame(Game):
     """Anagram Game Class"""
 
     def users_choice(self):
-        """Ask the user to choose a word length between 5 and 8."""
+        """Ask the user to choose a word length between 3 and 8."""
 
-        acceptable_range = range(3, 9)
-        while self.word_length not in acceptable_range:
-            self.word_length = int(
-                input(f"Please Choose a word length {list(acceptable_range)}: ")
-            )
-            if self.word_length not in acceptable_range:
-                print("Wrong Choice -> word_length = ", self.word_length)
-                print("That is not a correct word length.")
+        try:
+            acceptable_range = range(3, 9)
+            while self.word_length not in acceptable_range:
                 self.word_length = int(
                     input(
-                        f"-Please Try Again- Choose a word length {list(acceptable_range)}: "
+                        f"Please Choose a word length within -> {list(acceptable_range)}: "
                     )
                 )
-        return self.word_length
+                if self.word_length not in acceptable_range:
+                    print(f"Unavailable -> word_length = {self.word_length}")
+                    print("That is not an available word length.")
+                    self.word_length = int(
+                        input(
+                            f"-Please Try Again- Choose a word length within -> {list(acceptable_range)}: "
+                        )
+                    )
+            return self.word_length
+        except ValueError:
+            print("That is not a correct word length.")
+            print("-" * 50)
+            return self.users_choice()
 
     def file_path(self, relative_path):
         start_dir = Path(__file__).parent

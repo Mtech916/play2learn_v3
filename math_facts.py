@@ -22,17 +22,24 @@ class MathFactsGame(Game):
 
     def choose_max_number(self):
         """player chooses max number"""
-        max_number = None
-        max_num_range = range(1, 101)
-        while max_number not in max_num_range:
-            max_number = int(input("Please enter a max number between 1 and 100: "))
-            if max_number not in max_num_range:
-                print(f"You entered max number: {max_number}")
-                print("That is not a valid number.")
-                max_number = int(
-                    input("--Try again-- Please enter a max number between 1 and 100: ")
-                )
-        return max_number
+        try:
+            max_number = None
+            max_num_range = range(1, 101)
+            while max_number not in max_num_range:
+                max_number = int(input("Please enter a max number between 1 and 100: "))
+                if max_number not in max_num_range:
+                    print(f"You entered max number: {max_number}")
+                    print("That is not a valid number.")
+                    max_number = int(
+                        input(
+                            "--Try again-- Please enter a max number between 1 and 100: "
+                        )
+                    )
+            return max_number
+        except ValueError:
+            print("That is not a valid number.")
+            print("-" * 50)
+            return self.choose_max_number()
 
     def generate_problem(self, operation, max_number):
         """Generate a random math problem."""
@@ -51,6 +58,19 @@ class MathFactsGame(Game):
         math_problem = f"{rand_num1} {operation} {rand_num2} = ?"
 
         return math_problem, rand_num1, rand_num2
+
+    def check_user_answer(self, display_problem):
+        """Check if user answer is a valid integer"""
+
+        try:
+            user_answer = int(input("Enter an answer: "))
+            return user_answer
+        except ValueError:
+            print("That is not a valid number.")
+            print("-" * 50)
+            print(f"{display_problem}")
+            print(f"You have {self.game_time} seconds left.")
+            return self.check_user_answer(display_problem)
 
     def check_answer(self, operation, rand_num1, rand_num2, user_answer):
         """Check if user answer is truthy"""
@@ -88,7 +108,7 @@ class MathFactsGame(Game):
             while not last_guess_correct:
                 print(f"{display_problem}")
                 print(f"You have {self.game_time} seconds left.")
-                user_answer = int(input("Enter an answer: "))
+                user_answer = self.check_user_answer(display_problem)
                 checked = self.check_answer(
                     operation, rand_num1, rand_num2, user_answer
                 )
@@ -107,6 +127,7 @@ class MathFactsGame(Game):
                     break
                 else:
                     print(f"{user_answer} is not correct. Please try again.")
+                    print("-" * 50)
 
 
 if __name__ == "__main__":

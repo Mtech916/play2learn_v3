@@ -52,6 +52,10 @@ def generate_problem(operation, max_number):
         while rand_num1 % rand_num2 != 0:
             rand_num1 = random.randint(1, max_number)
             rand_num2 = random.randint(1, max_number)
+    elif operation == "-":
+        while rand_num1 - rand_num2 < 0:
+            rand_num1 = random.randint(1, max_number)
+            rand_num2 = random.randint(1, max_number)
 
     math_problem = f"{rand_num1} {operation} {rand_num2} = ?"
 
