@@ -1,212 +1,206 @@
-import time
-import threading
-import random
 from pathlib import Path
+
+# from game_classes import Game
+import threading
+import time
+import random
 import json
 
-timer_lock = threading.Lock()
-game_time = 60
-timer_stop = threading.Event()
-score = 0
 
+class Game:
+    def __init__(self, game_time):
+        """Initialize the game."""
+        self.game_time = game_time
+        self.timer = threading.Thread(target=self.start_timer)
+        self.score = 0
+        self.game_over = threading.Event()
+        self.word_length = None
 
-def users_choice():
-    """Ask the user to choose a word length between 5 and 8."""
-    word_length = None
-    acceptable_range = range(3, 9)
-    while word_length not in acceptable_range:
-        word_length = int(
-            input(f"Please Choose a word length {list(acceptable_range)}: ")
-        )
-        if word_length not in acceptable_range:
-            print("Wrong Choice -> word_length = ", word_length)
-            print("That is not a correct word length.")
-            word_length = int(
-                input(
-                    f"-Please Try Again- Choose a word length {list(acceptable_range)}: "
-                )
-            )
-    return word_length
+    def start_timer(self):
+        """Start the timer."""
+        while self.game_time > 0 and not self.game_over.is_set():
+            time.sleep(1)
+            self.game_time -= 1
 
+    def end_game(self, you_won):
+        """End the game."""
 
-def start_timer():
-    """Start a timer from 60 seconds."""
-    global game_time
-    while game_time > 0 and not timer_stop.is_set():
-        time.sleep(1)
-        with timer_lock:
-            game_time -= 1
+        won = you_won
 
-
-def file_path(relative_path):
-    start_dir = Path(__file__).parent
-    return Path(start_dir, relative_path)
-
-
-def get_words():
-    """Get a list of words from anagrams.json, create and return a dictionary of words."""
-
-    anagrams = Path("data/anagrams.json")
-    path_to_file = file_path(anagrams)
-    with path_to_file.open(encoding="utf-8") as f:
-        words = json.load(f)
-        words = dict(words)
-        words = {
-            k: [[word.upper() for word in sublist] for sublist in v]
-            for k, v in words.items()
-        }
-        return words
-
-
-def create_words_to_play(words, word_length):
-    """Create a list of words to play with from the words dictionary."""
-
-    words_to_guess = []
-    key = str(word_length)
-    words_to_guess = words.pop(key)
-
-    return words_to_guess
-
-
-def game_word_lists(words_to_guess):
-    """Pick a random block of words from words list for the user to play."""
-
-    current_words_to_play = random.choice(words_to_guess)
-    words_to_guess.remove(current_words_to_play)
-
-    return current_words_to_play, words_to_guess
-
-
-def check_guess(user_guess, current_words):
-    """Check if the user's guess is correct."""
-    if user_guess in current_words:
-        return True
-    else:
-        return False
-
-
-def end_game(you_won=False, wl=0):
-    """End the game."""
-    global score, timer_stop
-
-    if not you_won:
-        print("\nTime's up! Game Over")
-        print(f"\nYour score is {score}.")
-    else:
-        print(f"\nYour score is {score}.")
-        print(f"\nYou got all the anagrams for {wl} letter words!")
-        print("-" * 50)
-
-    play_again = input(f"Press enter to play again or 'q' to quit: ")
-
-    if not play_again:
-        timer_stop.set()
-        reset_game()
-    elif play_again.lower() == "q":
-        timer_stop.set()
-        return
-    else:
-        timer_stop.set()
-        return
-
-
-def reset_game():
-    """Reset the game."""
-    global game_time, score, timer_lock, timer_stop
-    score = 0
-    timer_lock = threading.Lock()
-    game_time = 60
-    timer_stop = threading.Event()
-
-    time.sleep(1)
-
-    main()
-
-
-def main():
-    """Run the game."""
-    global game_time
-    global score
-    display_word = None
-    num_of_words = None
-    user_guess = None
-    user_guesses = []
-
-    word_length = users_choice()
-
-    if word_length:
-        timer_thread = threading.Thread(target=start_timer)
-        timer_thread.start()
-
-    words = get_words()
-
-    words_to_guess = create_words_to_play(words, word_length)
-
-    # game_play_words are words that might be used in the game
-    # current_words are words that are being used in the game
-    current_words, game_play_words = game_word_lists(words_to_guess)
-    # w_o_h is set in order to pass g_p_w back to game_word_lists()
-    words_on_hold = game_play_words
-
-    display_word = random.choice(current_words)
-    current_words.remove(display_word)
-    num_of_words = len(current_words)
-
-    guessed_all = False
-
-    while (not guessed_all) and game_time > 0:
-        print(f" The word is: {display_word}")
-        print(f"There are {num_of_words} words left to guess.")
-        print(f"You have {game_time} seconds left to guess the word.")
-
-        user_guess = input("Make a guess: ").upper()
-        checked = check_guess(user_guess, current_words)
-
-        if not checked:
-            if user_guess in user_guesses:
-                message = f"You already guessed {user_guess}. Please try again."
-            else:
-                message = f"{user_guess} is not a valid anagram. Please try again."
-            user_guesses.append(user_guess)
-            if game_time == 0:
-                print(f"\nSorry, you didn't get that answer in on time.")
-                end_game()
-            else:
-                print(message)
+        if not won:
+            print("\nTime's Up!")
+            print(f"\nYour score is {self.score}.")
+            print("-" * 50)
         else:
-            score += 1
-            user_guesses.append(user_guess)
-            current_words.remove(user_guess)
-            num_of_words = len(current_words)
-            if game_time == 0:
-                print(f"\nSorry, you didn't get that answer in on time.")
-                end_game()
-            else:
-                print(f"{user_guess} is correct!")
-
-        if num_of_words == 0:
-            guessed_all = True
-            print(f"You got all the anagrams for {display_word}!")
+            print("\nYou Won!")
+            print(f"\nYour score is {self.score}.")
+            print(f"\nYou got all the anagrams for {self.word_length} letter words!")
             print("-" * 50)
 
-        if guessed_all and game_play_words and game_time > 0:
-            current_words, game_play_words = game_word_lists(words_on_hold)
-            user_guesses = []
-            display_word = random.choice(current_words)
-            current_words.remove(display_word)
-            num_of_words = len(current_words)
+        self.game_over.set()
 
-        if game_play_words:
-            guessed_all = False
+    def run(self):
+        """Create a run method."""
+        raise NotImplementedError("You must implement the run method.")
 
-        if num_of_words:
-            guessed_all = False
 
-        if not game_play_words and not num_of_words:
-            guessed_all = True
-            you_won = True
-            end_game(you_won, word_length)
+class AnagramGame(Game):
+    """Anagram Game Class"""
+
+    def users_choice(self):
+        """Ask the user to choose a word length between 5 and 8."""
+
+        acceptable_range = range(3, 9)
+        while self.word_length not in acceptable_range:
+            self.word_length = int(
+                input(f"Please Choose a word length {list(acceptable_range)}: ")
+            )
+            if self.word_length not in acceptable_range:
+                print("Wrong Choice -> word_length = ", self.word_length)
+                print("That is not a correct word length.")
+                self.word_length = int(
+                    input(
+                        f"-Please Try Again- Choose a word length {list(acceptable_range)}: "
+                    )
+                )
+        return self.word_length
+
+    def file_path(self, relative_path):
+        start_dir = Path(__file__).parent
+        return Path(start_dir, relative_path)
+
+    def get_words(self):
+        """Get a list of words from anagrams.json, create and return a dictionary of words."""
+
+        anagrams = Path("data/anagrams.json")
+        path_to_file = self.file_path(anagrams)
+        with path_to_file.open(encoding="utf-8") as f:
+            words = json.load(f)
+            words = dict(words)
+            words = {
+                k: [[word.upper() for word in sublist] for sublist in v]
+                for k, v in words.items()
+            }
+            return words
+
+    def create_words_to_play(self, words):
+        """Create a list of words to play with from the words dictionary."""
+
+        words_to_guess = []
+        key = str(self.word_length)
+        words_to_guess = words.pop(key)
+
+        return words_to_guess
+
+    def game_word_lists(self, words_to_guess):
+        """Pick a random block of words from words list for the user to play."""
+
+        current_words_to_play = random.choice(words_to_guess)
+        words_to_guess.remove(current_words_to_play)
+
+        return current_words_to_play, words_to_guess
+
+    def check_guess(self, user_guess, current_words):
+        """Check if the user's guess is correct."""
+        if user_guess in current_words:
+            return True
+        else:
+            return False
+
+    def run(self):
+        """Run the game."""
+        display_word = None
+        num_of_words = None
+        user_guess = None
+        user_guesses = []
+
+        num_of_char = self.users_choice()
+
+        if num_of_char:
+            timer_thread = threading.Thread(target=self.start_timer)
+            timer_thread.start()
+
+        words = self.get_words()
+
+        words_to_guess = self.create_words_to_play(words)
+
+        # game_play_words are words that might be used in the game
+        # current_words are words that are being used in the game
+        current_words, game_play_words = self.game_word_lists(words_to_guess)
+        # w_o_h is set in order to pass g_p_w back to game_word_lists()
+        words_on_hold = game_play_words
+
+        display_word = random.choice(current_words)
+        current_words.remove(display_word)
+        num_of_words = len(current_words)
+
+        guessed_all = False
+
+        while (not guessed_all) and self.game_time > 0:
+            print(f"The word is: {display_word}")
+            print(f"There are {num_of_words} words left to guess.")
+            print(f"You have {self.game_time} seconds left to guess the word.")
+
+            user_guess = input("Make a guess: ").upper()
+            checked = self.check_guess(user_guess, current_words)
+
+            if not checked:
+                if user_guess in user_guesses:
+                    message = f"You already guessed {user_guess}. Please try again."
+                else:
+                    message = f"{user_guess} is not a valid anagram. Please try again."
+                user_guesses.append(user_guess)
+                if self.game_time == 0:
+                    print(f"\nSorry, you didn't get that answer in on time.")
+                    you_won = False
+                    self.end_game(you_won)
+                else:
+                    print(message)
+                    print("-" * 50)
+            else:
+                self.score += 1
+                user_guesses.append(user_guess)
+                current_words.remove(user_guess)
+                num_of_words = len(current_words)
+                if self.game_time == 0:
+                    print(f"\nSorry, you didn't get that answer in on time.")
+                    you_won = False
+                    self.end_game(you_won)
+                else:
+                    print(f"{user_guess} is correct!")
+                    print("-" * 50)
+
+            if num_of_words == 0 and self.game_time > 0:
+                guessed_all = True
+                print(f"You got all the anagrams for {display_word}!")
+                print("-" * 50)
+
+            if guessed_all and game_play_words and self.game_time > 0:
+                current_words, game_play_words = self.game_word_lists(words_on_hold)
+                user_guesses = []
+                display_word = random.choice(current_words)
+                current_words.remove(display_word)
+                num_of_words = len(current_words)
+
+            if game_play_words:
+                guessed_all = False
+
+            if num_of_words:
+                guessed_all = False
+
+            if not game_play_words and not num_of_words:
+                guessed_all = True
+                you_won = True
+                self.end_game(you_won)
 
 
 if __name__ == "__main__":
-    main()
+    while True:
+        anagram_game = AnagramGame(60)
+        anagram_game.run()
+
+        play_again = input(f"Press enter to play again or 'q' to quit: ")
+        if not play_again or play_again.upper() != "Q":
+            continue
+        elif play_again.upper() == "Q":
+            break

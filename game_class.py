@@ -125,14 +125,17 @@ class MathFactsGame(Game):
                 )
 
                 if checked and self.game_time > 0:
-                    last_guess_correct = True
+                    # last_guess_correct = True
                     self.score += 1
                     print(f"{user_answer} is correct!")
                     print("-" * 50)
+                    break
                 elif self.game_time == 0:
-                    last_guess_correct = True
+                    # last_guess_correct = True
                     you_won = False
+                    print(f"\nSorry, you didn't get that answer in on time.")
                     self.end_game(you_won)
+                    break
                 else:
                     print(f"{user_answer} is not correct. Please try again.")
 
