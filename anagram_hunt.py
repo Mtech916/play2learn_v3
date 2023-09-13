@@ -164,11 +164,16 @@ class AnagramGame(Game):
 
 if __name__ == "__main__":
     while True:
-        anagram_game = AnagramGame(60)
-        anagram_game.run()
+        try:
+            anagram_game = AnagramGame(60)
+            anagram_game.run()
 
-        play_again = input(f"Press enter to play again or 'q' to quit: ")
-        if not play_again or play_again.upper() != "Q":
-            continue
-        elif play_again.upper() == "Q":
+            play_again = input(f"Press enter to play again or 'q' to quit: ")
+            if not play_again or play_again.upper() != "Q":
+                continue
+            elif play_again.upper() == "Q":
+                break
+        except KeyboardInterrupt:
+            anagram_game.quit_game()
+            print("\nThanks for playing!")
             break

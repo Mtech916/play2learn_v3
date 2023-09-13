@@ -34,6 +34,10 @@ class Game:
 
         self.game_over.set()
 
+    def quit_game(self):
+        """Stops game timer thread and sets game_over event."""
+        self.game_over.set()
+
     def run(self):
         """Create a run method."""
         raise NotImplementedError("You must implement the run method.")
